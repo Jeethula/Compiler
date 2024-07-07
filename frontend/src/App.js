@@ -15,7 +15,7 @@ import Activities from "./Pages/Activities";
 
 function App() {
 
-  axios.defaults.baseURL = 'http://localhost:3002';
+  axios.defaults.baseURL = 'https://compiler-s2fi.onrender.com';
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
