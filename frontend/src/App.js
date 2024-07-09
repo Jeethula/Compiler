@@ -15,7 +15,8 @@ import Activities from "./Pages/Activities";
 
 function App() {
 
-  axios.defaults.baseURL = 'https://compiler-s2fi.onrender.com';
+ // axios.defaults.baseURL = 'https://compiler-s2fi.onrender.com';
+    axios.defaults.baseURL = 'http://localhost:3002';
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -28,6 +29,7 @@ function App() {
         sessionStorage.setItem("id",result.data.id);
       }
       else{
+        alert("username or password is incorrect");
         console.log("Login failed");
       }
   };

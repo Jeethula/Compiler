@@ -26,10 +26,10 @@ export default function SignIn({ handleLogin }) {
   };
 
   return (
-    <div className='flex flex-col h-screen justify-center items-center bg-indigo-200 gap-6 '>
-      <h1 className='font-bold text-[20px]'>Sign in</h1>
-    <form onSubmit={handleSubmit} className='w-full max-w-sm bg-blue-100 shadow-lg rounded px-8 pt-6 pb-8 mb-4'>
-      <label htmlFor="username" className='block text-gray-700 text-sm font-bold mb-2'>Username:</label>
+    <div className='flex flex-col h-screen  justify-center items-center bg-indigo-100 gap-6 '>
+      <h1 className='font-bold text-3xl'>Sign in</h1>
+    <form onSubmit={handleSubmit} className='w-full h-[50vh] flex flex-col justify-evenly max-w-sm bg-blue-100  shadow-xl rounded-lg px-8 pt-6 pb-8 mb-4'>
+      <label htmlFor="username" className='block text-gray-700 text-xl font-bold mb-2'>Username:</label>
       <input
         type="text"
         id="username"
@@ -38,7 +38,7 @@ export default function SignIn({ handleLogin }) {
         onChange={(event) => setUsername(event.target.value)}
         className='shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline'
       />
-      <label htmlFor="password" className='block text-gray-700 text-sm font-bold mb-2'>Password:</label>
+      <label htmlFor="password" className='block text-gray-700 text-xl font-bold mb-2'>Password:</label>
       <input
         type="password"
         id="password"

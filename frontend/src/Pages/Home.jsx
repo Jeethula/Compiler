@@ -5,20 +5,22 @@ import { loadLanguage } from '@uiw/codemirror-extensions-langs';
 import { IoLogOut } from "react-icons/io5";
 import { HiSave } from "react-icons/hi";
 import { GrPowerReset } from "react-icons/gr";
-import { VscRunAll } from "react-icons/vsc";
+import { VscTriangleRight } from "react-icons/vsc";
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 
 function Home() {
-  const [code, setCode] = useState('');
-  const [language, setLanguage] = useState('cpp');
+  const [code, setCode] = useState('//type code here');
+  // const [language, setLanguage] = useState('python3');
   const [output,setOutput]=useState('');
   const [input,setInput]=useState('');
   const [memory,setMemory]=useState('');
   const [cpuTime,setCpuTime]=useState('');
- const user_id = sessionStorage.getItem('id');
- const [iscompiled,setIsCompiled]=useState(false);
+  const user_id = sessionStorage.getItem('id');
+  const [iscompiled,setIsCompiled]=useState(false);
+  const [error,setError]=useState(null);
+  const [loading,setLoading]=useState(false);
 
   const navigate = useNavigate();
 
@@ -30,22 +32,35 @@ function Home() {
     setInput(value);
   }
 
+  // useEffect(()=>{
 
-//   function formatCodeForBackend(userCode) {
-//     const formattedCode =userCode
-//         .replace(/\\/g, "\\")  // Escape backslashes
-//         .replace(/"/g, "\"")   // Escape double quotes
-//         .replace(/\n/g, "\n")   // Convert newlines to escape sequences
-//         .replace(/\t/g, "\t");  // Convert tabs to escape sequences
+  //   const getCredit = async()=>{
+  //       const res = await fetch("https://api.jdoodle.com/v1/credit-spent",{
+  //           method:"POST",
+  //           headers:{
+  //               "Content-Type":"application/json",
+  //           },
+  //           body:JSON.stringify({
+  //               clientId: "b736f53b7bb64ee4d9ef10e8342e9a3f",
+  //               clientSecret: "c04683476db617d4b28395a799332190e3f49675c6615d9931d19340d8015672",
+  //           })
+  //       });
+  //       console.log(res);
+  //   }
+  //   getCredit();
 
-//     return formattedCode;
-// }
+  // },[]);
+
 
 const handleSubmit = async () => {
-//   const formattedCode = formatCodeForBackend(code);
-//   console.log(formattedCode)
+
+  if(output === ''|| memory === '' || cpuTime === ''){
+      alert('Please run the code before submitting');
+      return;
+  }
+
   try {
-        const res = await axios.post('/userCreate', {
+        const res = await axios.post('/saveCode', {
             program: code,
             language:"python",
             input:input,
@@ -55,7 +70,6 @@ const handleSubmit = async () => {
             iscompiled:iscompiled,
             user_id:user_id
         });
-        console.log(res.data);
         if(res.data.message ==="success"){
             setCode('');
             setInput('');
@@ -72,41 +86,38 @@ const handleSubmit = async () => {
 
 
   const handleRun = async ()=>{
-    try{
-    const res = await fetch("https://api.jdoodle.com/v1/execute",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                 "Access-Control-Allow-Origin": "*",
-                 noCors: true
-            },
-            body: JSON.stringify({
-            clientId: "b736f53b7bb64ee4d9ef10e8342e9a3f",
-            clientSecret: "c04683476db617d4b28395a799332190e3f49675c6615d9931d19340d8015672",
-            script: code,
-            language: "python3",
-            versionIndex: "0",
-            stdin: input
-            }),
+    setLoading(true);
+    const data = {
+        clientId: "b736f53b7bb64ee4d9ef10e8342e9a3f",
+        clientSecret: "c04683476db617d4b28395a799332190e3f49675c6615d9931d19340d8015672",
+        script:code,
+        language: "python3",
+        versionIndex: "0",
+        stdin: input
         }
-    )
-    console.log(res.output,"output")
-    console.log(res)
-    setOutput(res.output);
-    setMemory(res.memory);
-    setCpuTime(res.cpuTime);
-    setIsCompiled(res.isCompiled);
+    try{
+    const res = await axios.post('/runCode',data);
+    // console.log(res,"res from run code");
+    setLoading(false);
+    setOutput(res.data.output);
+    setMemory(res.data.memory);
+    setCpuTime(res.data.cpuTime);
+    setIsCompiled(res.data.isCompiled);
+    setError(res.data.error);
+
     }catch(e){
         console.log(e)
     }
-    setInput('');
   }
 
     const handlereset = ()=>{
         setCode('');
         setInput('');
         setOutput('');
+        setMemory('');
+        setCpuTime('');
+        setIsCompiled(false);
+        setError(null);
     }
 
     const handleLogout = ()=>{
@@ -130,52 +141,61 @@ const handleSubmit = async () => {
         getProgram();
     }
 
+    if(sessionStorage.getItem("id")==null){
+      localStorage.clear();
+      sessionStorage.clear();
+        navigate('/');
+    }
+
 
    
   return (
     <>
-    <div >
+    <div className='bg-indigo-100 h-[100vh]' >
        <div className='w-full h-16 bg-indigo-400 flex justify-between items-center px-3'>
         <div className='flex items-center justify-evenly ml-5  bg-white mt-2 mb-2 rounded-md  '>
         <h1 className='cursor-pointer hover:bg-indigo-200 bg-indigo-300  h-fit font-semibold p-3 rounded-md hover:rounded-none  ' onClick={()=>{navigate("/dashboard")}}>Complie</h1>
         <h1 className='cursor-pointer h-fit p-3 hover:bg-indigo-100 ' onClick={()=>{navigate("/activities")}}>Activity</h1>
         </div>
-        <div>
+        <div className='flex items-center gap-x-4'>
+            {/* <div className='flex items-center gap-2  h-fit w-fit p-2 rounded-md  font-bold  '>Credit : </div> */}
             <button className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700 h-fit w-fit p-2 rounded-md text-white font-medium ' onClick={handleLogout}>logout<IoLogOut /></button>
         </div>
        </div>
         <div className='flex gap-x-1 p-1 rounded-lg'>
-            <div className='w-[65%]'>
+            <div className='w-[65%] '>
             <CodeMirror
                 value={code}
-                height="800px"
+                height="85vh"
                 width="100%"
                 theme={okaidia}
-                style={{fontSize: '16px',lineHeight: '20px'}}
+                borderRadius='10px'
+                style={{fontSize: '16px',lineHeight: '20px',borderRadius:'10px'}}
                 extensions={[loadLanguage('tsx')]}
                 onChange={handleCodeChange}
             />
             </div>  
 
-          <div className='w-[35%] flex flex-col gap-y-2'>
-            <div className='flex p-1 px-3 justify-between w-full bg-slate-400 rounded-md'>
+          <div className='w-[35%] flex flex-col gap-y-2 p-2'>
+            <div className='flex p-1  justify-between w-full bg-orange-400 border-orange-500 border-[3px] rounded-md'>
                 <div className='flex gap-x-3'>
-                <button className='bg-green-500 h-fit w-fit p-1 rounded-md font-semibold cursor-pointer flex gap-x-1 items-center' onClick={handleRun}>Run <VscRunAll /></button>
-                <button className='cursor-pointer flex items-center gap-x-1' onClick={handlereset}>reset<GrPowerReset /></button>
+                <button className='hover:bg-slate-300 bg-white h-fit w-fit p-1 px-2 rounded-md font-bold cursor-pointer flex  items-center' onClick={handleRun}>Run<VscTriangleRight />                </button>
+                <button className='hover:bg-slate-200 h-fit w-fit p-1 rounded-md cursor-pointer flex items-center gap-x-1' onClick={handlereset}>reset<GrPowerReset /></button>
                 </div>
-                <button className='bg-orange-400 h-fit w-fit p-1 rounded-md font-semibold cursor-pointer flex gap-x-1 items-center' onClick={handleSubmit}>Save & Submit <HiSave /></button>
+                <button className='hover:bg-slate-200  h-fit w-fit p-1 rounded-md font-semibold cursor-pointer flex gap-x-1 items-center' onClick={handleSubmit}>Save <HiSave /></button>
             </div>
             <div className='w-full flex flex-col gap-y-1 rounded-md'>
             <h1 className='flex pl-2 font-bold'>INPUT</h1>
-                <textarea className='p-1 rounded-sm bg-slate-100' placeholder='give input here' name="input" id="input" cols="27" rows="10" onChange={handleInputChange}>{input}</textarea>
+                <textarea className='p-1 rounded-md border-indigo-600 border-[3px] bg-slate-100' placeholder='give input here' name="input" id="input" cols="27" rows="10" onChange={handleInputChange}>{input}</textarea>
             </div>
             <div className='w-full flex flex-col gap-y-1 rounded-md'>
-                <h1 className='flex pl-2 font-bold' >OUTPUT</h1>
-                <h2 className='p-1 rounded-sm bg-slate-100 min-h-56 max-h-fit'>{output}</h2>
+               {error!=null ?<h1 className='flex pl-2 font-bold text-red-500'>ERROR</h1> :<h1 className='flex pl-2 font-bold' >OUTPUT</h1> }
+              { loading? <h2 className='p-3 flex items-center justify-center border-[3px] rounded-md border-red-500 bg-slate-100 min-h-56 max-h-fit'>Loading...</h2> 
+                :<div className='p-3 rounded-md border-indigo-600 border-[3px] bg-slate-100  min-h-56 max-h-fit'>{error!=null ? error:output}</div> }
             </div>
-            <div className='w-full p-1 h-fit flex flex-col gap-y-1 rounded-md bg-slate-100'>
-                <h1 className=''>Memory   : <span className='font-bold'>{memory}</span> </h1>
-                <hr />
+            <div className='w-full p-1 h-fit flex flex-col gap-y-1 rounded-md border-indigo-600 border-[3px] bg-slate-100'>
+                <h1 className=''>Memory : <span className='font-bold ml-1'>{memory}</span> </h1>
+                <hr className='border-indigo-600 border-[1px]' />
                 <h1 className=''>CPU Time : <span className='font-bold'>{cpuTime}</span> </h1>
             </div>
         </div>

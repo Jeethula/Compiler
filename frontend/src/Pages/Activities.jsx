@@ -70,7 +70,7 @@ function Activities() {
     
 
   return (
-    <div>
+    <div className='bg-indigo-50 h-[100vh]'>
        <div className='w-full h-16 bg-indigo-400 flex justify-between items-center px-3'>
         <div className='flex items-center justify-evenly ml-5  bg-white mt-2 mb-2 rounded-md  '>
         <h1 className='cursor-pointer hover:bg-indigo-100  h-fit p-3 ' onClick={()=>{navigate("/dashboard")}}>Complie</h1>

@@ -5,6 +5,10 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const app = express();
 const PORT =  3002;
+const axios = require('axios');
+require('dotenv').config();
+
+ConnectionURL = process.env.CONNECTION_STRING;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -12,7 +16,7 @@ app.use(bodyParser.json());
 
   app.get('/', async (_, res) => {
     const pool = new Pool({
-      connectionString: "postgresql://sample_owner:KqUaJp6WYvH9@ep-tight-firefly-a5h8flpg.us-east-2.aws.neon.tech/Code_Compiler?sslmode=require",
+      connectionString: ConnectionURL,
     });
     const client = await pool.connect();
     const result = await client.query('SELECT version()');
@@ -23,7 +27,7 @@ app.use(bodyParser.json());
 
 app.post('/userCreate',async(req,res)=>{
     const pool = new Pool({
-        connectionString: "postgresql://sample_owner:KqUaJp6WYvH9@ep-tight-firefly-a5h8flpg.us-east-2.aws.neon.tech/Code_Compiler?sslmode=require",
+        connectionString: ConnectionURL,
         });
         const client = await pool.connect();
         const {username,email,password} = req.body;
@@ -35,31 +39,39 @@ app.post('/userCreate',async(req,res)=>{
 
 app.get('/userLogin',async(req,res)=>{
     const pool = new Pool({
-        connectionString:  "postgresql://sample_owner:KqUaJp6WYvH9@ep-tight-firefly-a5h8flpg.us-east-2.aws.neon.tech/Code_Compiler?sslmode=require"
+        connectionString: ConnectionURL
     });
     const client = await pool.connect();
     // const {username,password} = req.query;
     const username = req.query.username;
     const password = req.query.password;
     const result = await client.query('SELECT * FROM users WHERE username=$1 AND password=$2',[username,password]);
+    try{
     const id=result.rows[0].id;
-    client.release();
     if(result.rows.length>0){
         res.json({message:true,id:id});
     }
     else{
         res.json({message:false});
     }
+    }catch(e){
+        console.log(e);
+    }
+    client.release();
 }
 );
 
 app.post('/saveCode',async(req,res)=>{
     const pool = new Pool({
-        connectionString: "postgresql://sample_owner:KqUaJp6WYvH9@ep-tight-firefly-a5h8flpg.us-east-2.aws.neon.tech/Code_Compiler?sslmode=require",
+        connectionString:ConnectionURL,
         });
         const client = await pool.connect();
         const {program,language,input,cputime,memory,output,iscompiled,user_id} = req.body;
-        const result = await client.query('INSERT INTO compiled_programs (program,language,input,cputime,memory,output,iscompiled,user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',[program,language,input,cputime,memory,output,iscompiled,user_id]);
+        //generate a unique id in int for each program and save it in the database
+        let id = Math.floor(Math.random() * 1000000);
+         const result = await client.query('INSERT INTO compiled_programs (program,language,input,cputime,memory,output,iscompiled,user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',[program,language,input,cputime,memory,output,iscompiled,user_id]);
+       // const result = await client.query('INSERT INTO compiled_programs (program,language,input,cputime,memory,output,iscompiled,user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',[id,program,language,input,cputime,memory,output,iscompiled,user_id]);
+        console.log(result,"result from save code")
         client.release();
         res.json({message:"success"});
 }
@@ -68,7 +80,7 @@ app.post('/saveCode',async(req,res)=>{
 // get all programs of a specific user by user_id
 app.get('/getPrograms',async(req,res)=>{
     const pool = new Pool({
-        connectionString:  "postgresql://sample_owner:KqUaJp6WYvH9@ep-tight-firefly-a5h8flpg.us-east-2.aws.neon.tech/Code_Compiler?sslmode=require",
+        connectionString: ConnectionURL,
     });
     const client = await pool.connect();
     const user_id = req.query.user_id;
@@ -81,7 +93,7 @@ app.get('/getPrograms',async(req,res)=>{
 // get specific program by program_id
 app.get('/getProgram',async(req,res)=>{
     const pool = new Pool({
-        connectionString:"postgresql://sample_owner:KqUaJp6WYvH9@ep-tight-firefly-a5h8flpg.us-east-2.aws.neon.tech/Code_Compiler?sslmode=require",
+        connectionString:ConnectionURL,
     });
     const client = await pool.connect();
     const program_id = req.query.program_id;
@@ -94,7 +106,7 @@ app.get('/getProgram',async(req,res)=>{
 // update specific program by program_id
 app.put('/updateProgram',async(req,res)=>{
     const pool = new Pool({
-        connectionString: "postgresql://sample_owner:KqUaJp6WYvH9@ep-tight-firefly-a5h8flpg.us-east-2.aws.neon.tech/Code_Compiler?sslmode=require",
+        connectionString: ConnectionURL,
         });
         const client = await pool.connect();
         const {program,language,input,cputime,memory,output,iscompiled,program_id} = req.body;
@@ -107,7 +119,7 @@ app.put('/updateProgram',async(req,res)=>{
 //delete specific program by program_id
 app.delete('/deleteProgram',async(req,res)=>{
     const pool = new Pool({
-        connectionString:"postgresql://sample_owner:KqUaJp6WYvH9@ep-tight-firefly-a5h8flpg.us-east-2.aws.neon.tech/Code_Compiler?sslmode=require",
+        connectionString:ConnectionURL,
     });
     const client = await pool.connect();
     const program_id = req.query.program_id;
@@ -116,6 +128,28 @@ app.delete('/deleteProgram',async(req,res)=>{
     res.json({message:"success"});
 }
 );
+
+app.post('/runCode',async(req,res)=>{
+   
+        const {clientId,clientSecret,script,language,versionIndex,stdin} = req.body;
+        // request to jdoodle api to run the code
+        try{
+            const data = {
+                clientId: clientId,
+                clientSecret: clientSecret,
+                script:script,
+                language: language,
+                versionIndex: versionIndex,
+                stdin: stdin
+                }
+                const resu = await axios.post('https://api.jdoodle.com/v1/execute',data);
+                console.log(resu.data);
+                res.json(resu.data);
+        }catch(e){
+            console.log(e,"error in run code");
+        }
+       
+})
 
 
 app.listen(PORT,()=>{
